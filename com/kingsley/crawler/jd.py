@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # @Time: 2019/08/26 21:30
-# @File: test2019082602.py
+# @File: jd.py
 # Author: Kingsley
 
 # python网络库
@@ -13,12 +13,11 @@ import random
 import time
 
 import jieba
-import requests
-from wordcloud import WordCloud
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import requests
 from PIL import Image
-
+from wordcloud import WordCloud
 
 
 # httpbin.org是一个测试http请求的网站，能正常回应请求
@@ -77,7 +76,7 @@ def create_word_cloud():
     """生成词云"""
     wc_mask = np.array(Image.open('qq.jpg'))
     wc = WordCloud(background_color="white", max_words=2000, mask=wc_mask, scale=4,
-                    max_font_size=50, random_state=42, font_path='C:\\WINDOWS\\Fonts\\simfang.ttf')
+                   max_font_size=50, random_state=42, font_path='C:\\WINDOWS\\Fonts\\simfang.ttf')
     wc.generate(cut_word())
 
     plt.imshow(wc, interpolation="bilinear")
@@ -88,6 +87,6 @@ def create_word_cloud():
 
 if __name__ == '__main__':
     # http_bin_test()
-    # batch_spider()
+    batch_spider()
     # cut_word()
     create_word_cloud()

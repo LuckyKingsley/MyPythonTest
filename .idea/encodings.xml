@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="Encoding" addBOMForNewFiles="with NO BOM">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/com/kingsley/crawler/douban_comment.txt" charset="GBK" />
     <file url="file://$PROJECT_DIR$/com/kingsley/crawler/jd_comment.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/com/kingsley/crawler/weibo.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/com/kingsley/crawler/weibo.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/com/kingsley/crawler/youku_danmu.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/com/kingsley/crawler/youku_danmu.txt" charset="GBK" />
   </component>
 </project>
