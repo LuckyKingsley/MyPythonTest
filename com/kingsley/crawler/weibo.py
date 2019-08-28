@@ -6,6 +6,10 @@
 
 import json
 import re
+import csv
+import time
+import random
+import os
 
 import requests
 
@@ -108,7 +112,7 @@ def personnal_information1(uid):
 
 # 获取个人信息2
 def personnal_information2(uid):
-    url = 'https://m.weibo.cn/users/' + uid + '?set=1'
+    url = 'https://weibo.cn/' + uid + '/info'
     kv = {
         'Referer': 'https://m.weibo.cn/profile/' + uid,
         'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 '
@@ -151,12 +155,20 @@ def spider_weibo():
         if 'card_group' in card:
             for card_group in card['card_group']:
                 if 'mblog' in card_group:
-                    with open('weibo.txt', mode='a+', encoding='utf-8') as file:
-                        file.write(card_group['mblog']['id'] + '\n'
-                                   + re.compile(r'<[^>]+>', re.S).sub(' ',
-                                                                      card_group['mblog']['text'].replace('周杰伦超话',
-                                                                                                          ' ')) + '\n'
-                                   + str(card_group['mblog']['user']['id']) + '\n')
+                    with open('weibo.csv', mode='a', encoding='utf-8') as csvfile:
+                        column = []
+                        column.append(str(card_group['mblog']['user']['id']))
+                        text = personnal_information2(str(card_group['mblog']['user']['id']))
+                        column.append(re.findall('<p id="J_name" class="J_label" isCompany="">(.*?)</p></div>', text))
+                        column.append(re.findall('<span class="L-selected-select">(.*?)</span></div>', text))
+                        column.append(re.findall('<p id="J_birthday" style="display:none;">(.*?)</p></div>', text))
+                        column.append(re.findall('<p id="J_location" class="J_label"[^>]*>([^<]*)</p>', text))
+                        column.append(card_group['mblog']['id'])
+                        column.append(re.compile(r'<[^>]+>', re.S).sub(' ',card_group['mblog']['text'].replace('周杰伦超话',' ')))
+
+                        csv_witer = csv.writer(csvfile)
+                        csv_witer.writerow(column)
+
                         r_since_id = card_group['mblog']['id']
                         if since_id:
                             since_id = r_since_id if since_id > r_since_id else since_id
@@ -175,19 +187,21 @@ if __name__ == '__main__':
 
     """"""
     json_reuslt = login_weibo_password()
-    if 'retcode' in json_reuslt and 20000000 == json_reuslt['retcode']:
-        uid = json_reuslt['data']['uid']
-        # json_personnal_information = personnal_information1(uid)
-        text = personnal_information2(uid)
-        birthday = re.findall('<p id="J_birthday" style="display:none;">(.*?)</p></div>', text)
-        location = re.findall('<p id="J_location" class="J_label"[^>]*>([^<]*)</p>', text)
-    else:
-        print('登陆失败')
+    # if 'retcode' in json_reuslt and 20000000 == json_reuslt['retcode']:
+    #     uid = json_reuslt['data']['uid']
+    #     # json_personnal_information = personnal_information1(uid)
+    #     text = personnal_information2(uid)
+    #     birthday = re.findall('<p id="J_birthday" style="display:none;">(.*?)</p></div>', text)
+    #     location = re.findall('<p id="J_location" class="J_label"[^>]*>([^<]*)</p>', text)
+    #     name = re.findall('<p id="J_name" class="J_label" isCompany="">(.*?)</p></div>', text)
+    #     agender = re.findall('<span class="L-selected-select">(.*?)</span></div>', text)
+    # else:
+    #     print('登陆失败')
     """"""
 
-    # if os.path.exists('weibo.txt'):
-    #     os.remove('weibo.txt')
-    # for i in range(3):
-    #     time.sleep(random.random() * 3)
-    #     print('第%d页' % (i + 1))
-    #     spider_weibo()
+    if os.path.exists('weibo.csv'):
+        os.remove('weibo.csv')
+    for i in range(1):
+        time.sleep(random.random() * 3)
+        print('第%d页' % (i + 1))
+        spider_weibo()
