@@ -4,12 +4,12 @@
 # @File: weibo.py
 # Author: Kingsley
 
+import collections
+import csv
 import json
 import re
-import csv
-import time
-import random
-import os
+from pyecharts.charts import Pie
+from pyecharts import options
 
 import requests
 
@@ -114,9 +114,8 @@ def personnal_information1(uid):
 def personnal_information2(uid):
     url = 'https://weibo.cn/' + uid + '/info'
     kv = {
-        'Referer': 'https://m.weibo.cn/profile/' + uid,
-        'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 '
-                      '(KHTML, like Gecko) Chrome/73.0.3683.86 Mobile Safari/537.36'
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 '
+                      '(KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'
     }
     try:
         r = session.get(url, headers=kv)
@@ -124,8 +123,30 @@ def personnal_information2(uid):
     except:
         print('获取个人信息失败')
 
-    print(r.text)
+    # print(r.text)
     return r.text
+
+
+# 处理个人信息格式
+def handle_personal_information(text):
+    information = re.findall('<div class="tip">基本信息</div><div class="c">(.*?)</div>', text)
+    information_kvs = information[0].split('<br/>')
+    # print(information)
+    # print(information_kvs)
+
+    information_dict = {'昵称': None, '性别': None, '地区': None, '生日': None}
+
+    for info in information_kvs:
+        if info.startswith('昵称'):
+            information_dict['昵称'] = info.split(":")[1]
+        if info.startswith('性别'):
+            information_dict['性别'] = info.split(":")[1]
+        if info.startswith('地区'):
+            information_dict['地区'] = info.split(":")[1]
+        if info.startswith('生日'):
+            information_dict['生日'] = info.split(":")[1]
+
+    return information_dict
 
 
 # 获取周杰伦超话内容
@@ -156,15 +177,18 @@ def spider_weibo():
             for card_group in card['card_group']:
                 if 'mblog' in card_group:
                     with open('weibo.csv', mode='a', encoding='utf-8') as csvfile:
+                        text = personnal_information2(str(card_group['mblog']['user']['id']))
+                        information_dict = handle_personal_information(text)
+
                         column = []
                         column.append(str(card_group['mblog']['user']['id']))
-                        text = personnal_information2(str(card_group['mblog']['user']['id']))
-                        column.append(re.findall('<p id="J_name" class="J_label" isCompany="">(.*?)</p></div>', text))
-                        column.append(re.findall('<span class="L-selected-select">(.*?)</span></div>', text))
-                        column.append(re.findall('<p id="J_birthday" style="display:none;">(.*?)</p></div>', text))
-                        column.append(re.findall('<p id="J_location" class="J_label"[^>]*>([^<]*)</p>', text))
+                        column.append(information_dict['昵称'])
+                        column.append(information_dict['性别'])
+                        column.append(information_dict['地区'])
+                        column.append(information_dict['生日'])
                         column.append(card_group['mblog']['id'])
-                        column.append(re.compile(r'<[^>]+>', re.S).sub(' ',card_group['mblog']['text'].replace('周杰伦超话',' ')))
+                        column.append(
+                            re.compile(r'<[^>]+>', re.S).sub(' ', card_group['mblog']['text'].replace('周杰伦超话', ' ')))
 
                         csv_witer = csv.writer(csvfile)
                         csv_witer.writerow(column)
@@ -174,6 +198,21 @@ def spider_weibo():
                             since_id = r_since_id if since_id > r_since_id else since_id
                         else:
                             since_id = r_since_id
+
+
+def read_csv_to_dict(index) -> dict:
+    with open('weibo.csv', 'r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        column = []
+        for columns in reader:
+            if len(columns) > 0:
+                column.append(columns[index])
+        dic = collections.Counter(column)
+        # 删除空字符串
+        if '' in dic:
+            dic.pop('')
+        print(dic)
+        return dic
 
 
 if __name__ == '__main__':
@@ -186,7 +225,7 @@ if __name__ == '__main__':
     # login_weibo_sms('339317')
 
     """"""
-    json_reuslt = login_weibo_password()
+    # json_reuslt = login_weibo_password()
     # if 'retcode' in json_reuslt and 20000000 == json_reuslt['retcode']:
     #     uid = json_reuslt['data']['uid']
     #     # json_personnal_information = personnal_information1(uid)
@@ -199,9 +238,23 @@ if __name__ == '__main__':
     #     print('登陆失败')
     """"""
 
-    if os.path.exists('weibo.csv'):
-        os.remove('weibo.csv')
-    for i in range(1):
-        time.sleep(random.random() * 3)
-        print('第%d页' % (i + 1))
-        spider_weibo()
+    # if os.path.exists('weibo.csv'):
+    #     os.remove('weibo.csv')
+    # for i in range(1000):
+    #     time.sleep(random.random() * 3)
+    #     print('第%d页' % (i + 1))
+    #     spider_weibo()
+
+    """"""
+    dic = read_csv_to_dict(2)
+    # 生成二维数组
+    gender_count_list = [list(z) for z in zip(dic.keys(), dic.values())]
+    print(gender_count_list)
+    pie = (
+        Pie()
+        .add('', gender_count_list)
+        .set_colors(['red', 'blue'])
+        .set_global_opts(title_opts=options.TitleOpts(title='性别分析'))
+        .set_series_opts(label_opts=options.LabelOpts(formatter='{b}: {c}'))
+    )
+    pie.render('gender.html')
